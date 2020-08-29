@@ -22,6 +22,9 @@ class User(Base):
 
     post = relationship("Post", back_populates='user')
 
+    def __repr__(self):
+        return f"User({self.id}, {self.first_name}, {self.second_name}, {self.nickname})"
+
 
 class Post(Base):
     __tablename__ = 'post'
@@ -34,6 +37,9 @@ class Post(Base):
     user = relationship("User", back_populates='post')
     post_keyword = relationship("Post_Keyword", back_populates='post')
 
+    def __repr__(self):
+        return f"Post({self.id}, {self.title}, {self.user_id})"
+
 
 class Post_Keyword(Base):
     __tablename__ = 'post_keyword'
@@ -45,6 +51,9 @@ class Post_Keyword(Base):
     post = relationship("Post", back_populates='post_keyword')
     keyword = relationship("Keyword", back_populates='post_keyword')
 
+    def __repr__(self):
+        return f"Post_Keyword({self.id}, {self.post_id}, {self.keyword_id})"
+
 
 class Keyword(Base):
     __tablename__ = "keyword"
@@ -53,6 +62,9 @@ class Keyword(Base):
     word = Column(String, nullable=False)
 
     post_keyword = relationship("Post_Keyword", back_populates='keyword')
+
+    def __repr__(self):
+        return f"Keyword({self.id}, {self.word})"
 
 
 init_db()
