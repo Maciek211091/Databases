@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Column, Sequence, create_engine, ForeignKey, Table, Text
+from sqlalchemy import Integer, String, Column, Sequence, create_engine, ForeignKey, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -21,6 +21,7 @@ class User(Base):
     nickname = Column(String)
 
     post = relationship("Post", back_populates='user')
+    comments = relationship("Comments", back_populates='user')
 
     def __init__(self, first_name, nickname):
         self.first_name = first_name
@@ -32,7 +33,7 @@ class User(Base):
 
 # tworzenie tabeli pomocniczej - nie trzeba w klasie jeśli nie potrzebujemy dodawać wartości
 post_keyword = Table('post_keywords', Base.metadata, Column('post_id', ForeignKey('post.id'), primary_key=True),
-                     Column('keyword_id',ForeignKey('keyword.id'), primary_key=True))
+                     Column('keyword_id', ForeignKey('keyword.id'), primary_key=True))
 
 
 class Post(Base):
@@ -42,17 +43,24 @@ class Post(Base):
     title = Column(String, nullable=False)
     content = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("user.id"))
+    comments_list = Column(String)
+    likes = Column(Integer)
 
     user = relationship("User", back_populates='post')
     keyword = relationship("Keyword", secondary=post_keyword, back_populates='post')
+    comments = relationship("Comments", back_populates='post')
 
-    def __init__(self, author, title, content):
+    def __init__(self, author, title, content, likes=0):
         self.author = author
         self.title = title
         self.content = content
+        self.likes = likes
+
+    def give_like(self):
+        self.likes += 1
 
     def __repr__(self):
-        return f"Post({self.id}, {self.title}, {self.user_id})"
+        return f"Post({self.id}, {self.title}, likes {self.likes})"
 
 
 class Keyword(Base):
@@ -70,23 +78,42 @@ class Keyword(Base):
         return f"Keyword({self.id}, {self.keyword})"
 
 
+class Comments(Base):
+    __tablename__ = 'comments'
+
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    comment_content = Column(String, nullable=False)
+    post_id = Column(Integer, ForeignKey("post.id"))
+    user_id = Column(Integer, ForeignKey("user.id"))
+
+    user = relationship("User", back_populates='comments')
+    post = relationship("Post", back_populates='comments')
+
+
 init_db()
 
-jack = User('Jack', 'Jackie')
 
-session.add(jack)
+def create_user(name: str, nickname: str):
 
-session.commit()
+    print(f"Creating user {nickname}")
 
-jack_post = Post('Jack', "First Post", "Hello World")
+    return User(name, nickname)
 
-session.add(jack_post)
 
-session.commit()
+def create_post(user, title, content):
+    print(f"Creating post titled: {title}")
 
-print(session.query(User).all())
+    return Post(user, title, content)
 
-jack_post.keyword.append(Keyword('jack'))
-jack_post.keyword.append(Keyword('world'))
 
-session.commit()
+def list_from_query(query):
+    res = []
+    for el in query:
+        res.append(el[0])
+
+    return res
+
+
+'''
+to be changed into CLI app
+'''
